@@ -8,7 +8,7 @@ import gym
 import matplotlib.pyplot as plt
 
 from env.custom_hopper import *
-from agentAC import Agent, Policy
+from agent import Agent, Policy
 
 
 def parse_args():

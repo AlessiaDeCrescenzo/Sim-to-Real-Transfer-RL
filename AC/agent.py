@@ -19,7 +19,7 @@ def bootstrapped_rewards(r,v,gamma):
     return bootstrapped_r
 
 
-class PolicyAC(torch.nn.Module):
+class Policy(torch.nn.Module):
     def __init__(self, state_space, action_space):
         super().__init__()
         self.state_space = state_space
@@ -76,7 +76,7 @@ class PolicyAC(torch.nn.Module):
         return normal_dist, value
 
 
-class AgentAC(object):
+class Agent(object):
     def __init__(self, policy, device='cpu'):
         self.train_device = device
         self.policy = policy.to(self.train_device)
