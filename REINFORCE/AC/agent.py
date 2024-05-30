@@ -14,14 +14,12 @@ def discount_rewards(r, gamma):
 
 def bootstrapped_rewards(r,v,gamma):
     bootstrapped_r= torch.zeros_like(r)
-    reward=0
     for t in reversed(range(0, r.size(-1))):
-        reward = r[t] + gamma*v[t]
-        bootstrapped_r[t] = reward
+        bootstrapped_r[t] = r[t] + gamma*v[t]
     return bootstrapped_r
 
 
-class Policy(torch.nn.Module):
+class PolicyAC(torch.nn.Module):
     def __init__(self, state_space, action_space):
         super().__init__()
         self.state_space = state_space
@@ -78,7 +76,7 @@ class Policy(torch.nn.Module):
         return normal_dist, value
 
 
-class Agent(object):
+class AgentAC(object):
     def __init__(self, policy, device='cpu'):
         self.train_device = device
         self.policy = policy.to(self.train_device)
@@ -154,4 +152,3 @@ class Agent(object):
         self.action_log_probs.append(action_log_prob)
         self.rewards.append(torch.Tensor([reward]))
         self.done.append(done)
-
