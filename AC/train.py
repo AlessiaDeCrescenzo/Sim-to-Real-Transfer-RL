@@ -8,13 +8,13 @@ import gym
 import matplotlib.pyplot as plt
 
 from env.custom_hopper import *
-from agent import Agent, Policy
+from agent import Agent, Actor,Critic
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--n-episodes', default=10000, type=int, help='Number of training episodes')
-    parser.add_argument('--print-every', default=500, type=int, help='Print info every <> episodes')
+    parser.add_argument('--n-episodes', default=20000, type=int, help='Number of training episodes')
+    parser.add_argument('--print-every', default=1000, type=int, help='Print info every <> episodes')
     parser.add_argument('--device', default='cpu', type=str, help='network device [cpu, cuda]')
 
     return parser.parse_args()
@@ -38,8 +38,9 @@ def main():
 	observation_space_dim = env.observation_space.shape[-1]
 	action_space_dim = env.action_space.shape[-1]
 
-	policy = Policy(observation_space_dim, action_space_dim)
-	agent = Agent(policy, device=args.device)
+	actor = Actor(observation_space_dim, action_space_dim)
+	critic = Critic(observation_space_dim)
+	agent = Agent(actor,critic, device=args.device)
 
     #
     # TASK 2 and 3: interleave data collection to policy updates
@@ -71,7 +72,8 @@ def main():
 			print('Episode return:', train_reward)
 
 
-	torch.save(agent.policy.state_dict(), "model.mdl")
+	torch.save(agent.actor.state_dict(), "actor_model.mdl")
+	torch.save(agent.critic.state_dict(), "critic_model.mdl")
 
 	plt.plot(returns)
 	plt.xlabel('Episode')
