@@ -154,7 +154,6 @@ class Agent(object):
     def get_action(self, state, evaluation=False):
         """ state -> action (3-d), action_log_densities """
         x = torch.from_numpy(state).float().to(self.train_device)
-
         normal_dist = self.actor(x)
 
         if evaluation:  # Return mean
