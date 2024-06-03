@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from torch.distributions import Normal
-
+import itertools
 
 def discount_rewards(r, gamma):
     discounted_r = torch.zeros_like(r)
@@ -34,6 +34,8 @@ class Actor(torch.nn.Module):
         self.sigma_activation = F.softplus
         init_sigma = 0.5
         self.sigma = torch.nn.Parameter(torch.zeros(self.action_space)+init_sigma)
+
+        self.init_weights()
 
     def init_weights(self):
         for m in self.modules():
@@ -92,10 +94,12 @@ class Agent(object):
         self.train_device = device
         self.actor = actor.to(self.train_device)
         self.critic = critic.to(self.train_device)
+        params=[actor.parameters(), critic.parameters()] #itertools.chain(*params)
         self.actor_optimizer = torch.optim.Adam(actor.parameters(), lr=1e-3)
         self.critic_optimizer = torch.optim.Adam(critic.parameters(), lr=1e-3)
 
         self.gamma = 0.99
+        self.I=1
         self.states = []
         self.next_states = []
         self.action_log_probs = []
@@ -124,29 +128,34 @@ class Agent(object):
 
         #
         # TASK 3:
-        #   - compute boostrapped discounted return estimates
+        #   compute boostrapped discounted return estimates
         returns = bootstrapped_rewards(rewards,next_state_values,self.gamma)
-        returns.detach()
-        #   - compute advantage terms
-        advantages = returns - state_values
-        #   - compute actor loss and critic loss
-        
-
-        critic_loss = F.mse_loss(returns, state_values)
-
-        self.critic_optimizer.zero_grad()
-        critic_loss.backward()
-        self.critic_optimizer.step()
+        #returns.detach()
+        #   compute advantage terms
+        with torch.no_grad():
+            advantages = returns - state_values
+        #   compute actor loss and critic loss
+    
 
         
-        #   - compute gradients and step the optimizer
-        # Perform optimization step
+
+        actor_loss = -torch.mean(I * action_log_probs * advantages.detach())
+        critic_loss = F.mse_loss(advantages.detach(), state_values)
 
         self.actor_optimizer.zero_grad()
-        actor_loss = -(I * action_log_probs * advantages.detach()).mean()
         actor_loss.backward()
         self.actor_optimizer.step()
 
+        self.critic_optimizer.zero_grad()
+        critic_loss.backward()
+        
+        #   - compute gradients and step the optimizer
+        # Perform optimization step
+        
+        
+        self.critic_optimizer.step()
+
+        self.I=self.I*self.gamma
 
         return        
 

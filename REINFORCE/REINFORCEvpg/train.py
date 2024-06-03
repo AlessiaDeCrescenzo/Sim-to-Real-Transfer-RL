@@ -2,7 +2,7 @@
     REINFORCE and Actor-critic algorithms
 """
 import argparse
-import matplotlib.pyplot as plt  # Add this import
+import matplotlib.pyplot as plt # Add this import
 import torch
 import gym
 from env.custom_hopper import *
@@ -10,8 +10,8 @@ from agent import AgentREINFORCE, PolicyREINFORCE
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--n-episodes', default=100, type=int, help='Number of training episodes')    #default=100000
-    parser.add_argument('--print-every', default=20, type=int, help='Print info every <> episodes')  #default=20000
+    parser.add_argument('--n-episodes', default=100000, type=int, help='Number of training episodes')    #default=100000
+    parser.add_argument('--print-every', default=2500, type=int, help='Print info every <> episodes')  #default=20000
     parser.add_argument('--device', default='cpu', type=str, help='Network device [cpu, cuda]')
     return parser.parse_args()
 
@@ -33,6 +33,7 @@ def main():
     policy = PolicyREINFORCE(observation_space_dim, action_space_dim)
     agent = AgentREINFORCE(policy, device=args.device)
 
+    returns=[]
 
     for episode in range(args.n_episodes):
         done = False
@@ -49,7 +50,7 @@ def main():
 
             train_reward += reward
 
-
+        returns.append(train_reward)
         agent.update_policy()  # Update policy at the end of the episode
 
         if (episode + 1) % args.print_every == 0:
@@ -57,6 +58,17 @@ def main():
             print('Episode return:', train_reward)
 
     torch.save(agent.policy.state_dict(), "model_reinforce_2.mdl")
+
+    plt.plot(returns)
+    plt.xlabel('Episode')
+    plt.ylabel('Return')
+    plt.show()
+
+	#plt.xlabel("Episode")
+	#plt.ylabel("Return")
+	#plt.title("Episode returns over time")
+	#plt.show()
+
 
 if __name__ == '__main__':
     main()

@@ -13,8 +13,8 @@ from agent import Agent, Actor,Critic
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--n-episodes', default=20000, type=int, help='Number of training episodes')
-    parser.add_argument('--print-every', default=1000, type=int, help='Print info every <> episodes')
+    parser.add_argument('--n-episodes', default=100000, type=int, help='Number of training episodes')
+    parser.add_argument('--print-every', default=5000, type=int, help='Print info every <> episodes')
     parser.add_argument('--device', default='cpu', type=str, help='network device [cpu, cuda]')
 
     return parser.parse_args()
@@ -46,6 +46,7 @@ def main():
     # TASK 2 and 3: interleave data collection to policy updates
     #
 
+	torch.manual_seed(315304)
 	returns=[]
 
 	for episode in range(args.n_episodes):

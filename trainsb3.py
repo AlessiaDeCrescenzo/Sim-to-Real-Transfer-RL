@@ -48,12 +48,15 @@ def main():
     # TASK 4 & 5: train and test policies on the Hopper env with stable-baselines3
     
     stop_callback = StopTrainingOnMaxEpisodes(max_episodes=ENV_EPS, verbose=1) # callback for stopping at 100_000 episodes
-    target_eval_callback = EvalCallback(eval_env=target_env, n_eval_episodes=50, eval_freq=15000, log_path=args.target_log_path) # evaluation of target during training
+    # When using multiple training environments, agent will be evaluated every
+    # eval_freq calls to train_env.step(), thus it will be evaluated every
+    # (eval_freq * n_envs) training steps. See EvalCallback doc for more information.
+    target_eval_callback = EvalCallback(eval_env=target_env, n_eval_episodes=50, eval_freq=15000, log_path=args.target_log_path) # Create callback that evaluates agent for 50 episodes every 15000 training environment steps.
     callback_list = [stop_callback, target_eval_callback]
 
     if args.train == 'source':
         train_env = source_env # sets the train to source
-        source_eval_callback = EvalCallback(eval_env=source_env, n_eval_episodes=50, eval_freq=15000, log_path=args.source_log_path) # if we are training in source, evaluate also in source
+        source_eval_callback = EvalCallback(eval_env=source_env, n_eval_episodes=50, eval_freq=15000, log_path=args.source_log_path) # Create callback that also evaluates agent for 50 episodes every 15000 source environment steps.
         callback_list.append(source_eval_callback)
     else:
         train_env = target_env
