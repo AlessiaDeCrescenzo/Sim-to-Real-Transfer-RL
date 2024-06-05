@@ -90,7 +90,7 @@ class Critic(torch.nn.Module):
 
 
 class Agent(object):
-    def __init__(self, actor,critic, device='cpu'):
+    def __init__(self, actor,critic, device='cpu',lra=1e-3, lrc=1e-3):     #ho cambiato init perchè mi serve per gridsearch
         self.train_device = device
         self.actor = actor.to(self.train_device)
         self.critic = critic.to(self.train_device)
