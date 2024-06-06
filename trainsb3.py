@@ -8,12 +8,15 @@ import gym
 from env.custom_hopper import *
 from stable_baselines3 import SAC
 from stable_baselines3.common.env_util import make_vec_env
+from stable_baselines3.common.results_plotter import load_results, ts2xy, plot_results
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.callbacks import EvalCallback, StopTrainingOnMaxEpisodes, CallbackList
 from stable_baselines3.common.evaluation import evaluate_policy
 import os
 import numpy as np
 import argparse
+import matplotlib.pyplot as plt
+import pandas as pd
 
 
 def parse_args():
@@ -34,11 +37,32 @@ N_ENVS = os.cpu_count()
 MAX_EPS = args.episodes
 ENV_EPS = int(np.ceil(MAX_EPS / N_ENVS))
 
+def plot_results(log_paths, timesteps, xaxis, task_name):
+    dfs = []
+    for log_path in log_paths:
+        if os.path.isdir(log_path):  # Check if the path is a directory
+            # If the path is a directory, assume it contains monitor files and get the list of files inside
+            monitor_files = [os.path.join(log_path, file) for file in os.listdir(log_path) if file.endswith('.csv')]
+            dfs.extend([pd.read_csv(file, skiprows=1) for file in monitor_files])
+        else:
+            dfs.append(pd.read_csv(log_path, skiprows=1))  # Skip the header row
+    
+    plt.figure(figsize=(8, 6))
+    for i, df in enumerate(dfs):
+        plt.plot(df[xaxis], df['r'], label=f'Run {i + 1}')
+
+    plt.xlabel(xaxis)
+    plt.ylabel('Reward')
+    plt.title(f'{task_name} - Training Progress')
+    plt.legend()
+    plt.grid()
+    plt.show()
+
 def main():
     #train_env = gym.make('CustomHopper-source-v0')
 
-    source_env = make_vec_env('CustomHopper-source-v0', n_envs=N_ENVS, vec_env_cls=DummyVecEnv)
-    target_env = make_vec_env('CustomHopper-target-v0', n_envs=N_ENVS, vec_env_cls=DummyVecEnv)
+    source_env = make_vec_env('CustomHopper-source-v0', n_envs=N_ENVS, vec_env_cls=DummyVecEnv, monitor_dir=args.source_log_path)
+    target_env = make_vec_env('CustomHopper-target-v0', n_envs=N_ENVS, vec_env_cls=DummyVecEnv, monitor_dir=args.target_log_path)
 
     #print('State space:', train_env.observation_space)  # state-space
     #print('Action space:', train_env.action_space)  # action-space
@@ -66,6 +90,10 @@ def main():
     model = SAC('MlpPolicy', batch_size=128, learning_rate=0.00025, env=train_env, verbose=1, device='cpu')
     model.learn(total_timesteps=int(1e10), callback=callback, tb_log_name=args.train)
     model.save("SAC_model_"+args.train)
+
+    # Plot the results
+    log_path = args.target_log_path if args.train == 'target' else args.source_log_path
+    plot_results([log_path], 1e5, 't', "SAC CustomHopper")
 
 
 if __name__ == '__main__':
