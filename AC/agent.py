@@ -95,8 +95,8 @@ class Agent(object):
         self.actor = actor.to(self.train_device)
         self.critic = critic.to(self.train_device)
         params=[actor.parameters(), critic.parameters()] #itertools.chain(*params)
-        self.actor_optimizer = torch.optim.Adam(actor.parameters(), lr=1e-3)
-        self.critic_optimizer = torch.optim.Adam(critic.parameters(), lr=1e-3)
+        self.optimizer = torch.optim.Adam(itertools.chain(*params), lr=1e-3)
+        #self.critic_optimizer = torch.optim.Adam(critic.parameters(), lr=1e-3)
 
         self.gamma = 0.99
         self.I=1
@@ -141,19 +141,16 @@ class Agent(object):
 
         actor_loss = -torch.mean(I * action_log_probs * advantages.detach())
         critic_loss = F.mse_loss(advantages.detach(), state_values)
-
-        self.actor_optimizer.zero_grad()
-        actor_loss.backward()
-        self.actor_optimizer.step()
-
-        self.critic_optimizer.zero_grad()
-        critic_loss.backward()
         
         #   - compute gradients and step the optimizer
         # Perform optimization step
+        self.optimizer.zero_grad()
+        actor_loss.backward(retain_graph=True)
+        critic_loss.backward()
+        self.optimizer.step()
         
         
-        self.critic_optimizer.step()
+        #self.critic_optimizer.step()
 
         self.I=self.I*self.gamma
 

@@ -75,12 +75,12 @@ def main():
     # When using multiple training environments, agent will be evaluated every
     # eval_freq calls to train_env.step(), thus it will be evaluated every
     # (eval_freq * n_envs) training steps. See EvalCallback doc for more information.
-    target_eval_callback = EvalCallback(eval_env=target_env, n_eval_episodes=50, eval_freq=15000, log_path=args.target_log_path) # Create callback that evaluates agent for 50 episodes every 15000 training environment steps.
+    target_eval_callback = EvalCallback(eval_env=target_env, n_eval_episodes=50, eval_freq=5000, log_path=args.target_log_path) # Create callback that evaluates agent for 50 episodes every 15000 training environment steps.
     callback_list = [stop_callback, target_eval_callback]
 
     if args.train == 'source':
         train_env = source_env # sets the train to source
-        source_eval_callback = EvalCallback(eval_env=source_env, n_eval_episodes=50, eval_freq=15000, log_path=args.source_log_path) # Create callback that also evaluates agent for 50 episodes every 15000 source environment steps.
+        source_eval_callback = EvalCallback(eval_env=source_env, n_eval_episodes=50, eval_freq=5000, log_path=args.source_log_path) # Create callback that also evaluates agent for 50 episodes every 15000 source environment steps.
         callback_list.append(source_eval_callback)
     else:
         train_env = target_env
@@ -94,6 +94,15 @@ def main():
     # Plot the results
     log_path = args.target_log_path if args.train == 'target' else args.source_log_path
     plot_results([log_path], 1e5, 't', "SAC CustomHopper")
+
+    model = SAC.load("SAC_model_source")
+
+    obs = source_env.reset()
+    while True:
+        action, _states = model.predict(obs)
+        obs, rewards, dones, info = source_env.step(action)
+        source_env.render()
+
 
 
 if __name__ == '__main__':
