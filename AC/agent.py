@@ -90,13 +90,13 @@ class Critic(torch.nn.Module):
 
 
 class Agent(object):
-    def __init__(self, actor,critic, device='cpu',lra=1e-3, lrc=1e-3):     #ho cambiato init perchè mi serve per gridsearch
+    def __init__(self, actor,critic, device='cpu',lr=1e-3):     #ho cambiato init perchè mi serve per gridsearch
         self.train_device = device
         self.actor = actor.to(self.train_device)
         self.critic = critic.to(self.train_device)
         params=[actor.parameters(), critic.parameters()] #itertools.chain(*params)
-        self.optimizer = torch.optim.Adam(itertools.chain(*params), lr=1e-3)
-        #self.critic_optimizer = torch.optim.Adam(critic.parameters(), lr=1e-3)
+        self.optimizer = torch.optim.Adam(itertools.chain(*params), lr=lr)
+        #self.critic_optimizer = torch.optim.Adam(critic.parameters(), lr=)
 
         self.gamma = 0.99
         self.I=1
