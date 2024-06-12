@@ -2,17 +2,21 @@
     REINFORCE and Actor-critic algorithms
 """
 import argparse
-import matplotlib.pyplot as plt # Add this import
+import matplotlib.pyplot as plt  # Add this import
 import torch
 import gym
 from env.custom_hopper import *
 from agent import AgentREINFORCE, PolicyREINFORCE
+import pickle #dovrebbe servire per leggere il file
+import numpy as np
+
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--n-episodes', default=100000, type=int, help='Number of training episodes')    #default=100000
-    parser.add_argument('--print-every', default=2500, type=int, help='Print info every <> episodes')  #default=20000
+    parser.add_argument('--n-episodes', default=100, type=int, help='Number of training episodes')    #default=100000
+    parser.add_argument('--print-every', default=20, type=int, help='Print info every <> episodes')  #default=20000
     parser.add_argument('--device', default='cpu', type=str, help='Network device [cpu, cuda]')
+    parser.add_argument('--fine-tuning-params', default='best_fine_tuning_result.pkl', type=str, help='Path to fine-tuning parameters')  #per leggere iperparameter del fine tunig
     return parser.parse_args()
 
 args = parse_args()
@@ -25,15 +29,22 @@ def main():
     print('State space:', env.observation_space)
     print('Dynamics parameters:', env.get_parameters())
 
+
+
+    # Load fine-tuning parameters
+    with open(args.fine_tuning_params, 'rb') as infile:
+        fine_tuning_params = pickle.load(infile)[1]  # [1] because you only need the config, not the score
+
     # Training
 
     observation_space_dim = env.observation_space.shape[-1]
     action_space_dim = env.action_space.shape[-1]
 
-    policy = PolicyREINFORCE(observation_space_dim, action_space_dim)
-    agent = AgentREINFORCE(policy, device=args.device)
+    policy = PolicyREINFORCE(observation_space_dim, action_space_dim, hidden=fine_tuning_params['hidden_size'])  #METTERE HIDDEN#in questo modo dovrebbe cambiare i parametri di default in quegli migliori
+    agent = AgentREINFORCE(policy, device=args.device, lr=fine_tuning_params['lr'], gamma=fine_tuning_params['gamma'])
 
     returns=[]
+    avg_returns = []  # List to store average returns
 
     for episode in range(args.n_episodes):
         done = False
@@ -47,28 +58,29 @@ def main():
             state, reward, done, info = env.step(action.detach().cpu().numpy())
 
             agent.store_outcome(previous_state, state, action_probabilities, reward, done)
-
+            
             train_reward += reward
 
         returns.append(train_reward)
+        mean_rewards = np.mean(returns[-10:])     #-100
+        avg_returns.append(mean_rewards)# Calculate average return
         agent.update_policy()  # Update policy at the end of the episode
 
         if (episode + 1) % args.print_every == 0:
             print('Training episode:', episode)
             print('Episode return:', train_reward)
+            print(f'Mean return (last 100 episodes): {mean_rewards}')
+
 
     torch.save(agent.policy.state_dict(), "model_reinforce_2.mdl")
 
-    plt.plot(returns)
+    plt.plot(returns, label='Episode Return')
+    plt.plot(avg_returns, label='Average Return (last 100 episodes)', linestyle='--') 
     plt.xlabel('Episode')
     plt.ylabel('Return')
+    plt.title('Episode returns over time')
+    plt.legend()
     plt.show()
-
-	#plt.xlabel("Episode")
-	#plt.ylabel("Return")
-	#plt.title("Episode returns over time")
-	#plt.show()
-
 
 if __name__ == '__main__':
     main()
