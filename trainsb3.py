@@ -9,7 +9,6 @@ from env.custom_hopper import *
 from stable_baselines3 import SAC
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.results_plotter import load_results, ts2xy, plot_results
-from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.callbacks import EvalCallback, StopTrainingOnMaxEpisodes, CallbackList
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.monitor import Monitor
@@ -23,9 +22,11 @@ import pandas as pd
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--train', type=str)
+    parser.add_argument('--test', type=str)
     parser.add_argument('--source-log-path', type=str)
     parser.add_argument('--target-log-path', type=str)
     parser.add_argument('--episodes', default=100_000, type=int)
+    parser.add_argument('--evalepisodes',default=1000,type=int)
     return parser.parse_args()
 
 args = parse_args()
@@ -100,16 +101,14 @@ def main():
     log_path = args.target_log_path if args.train == 'target' else args.source_log_path
     plot_results([log_path], 1e5, 't', "SAC CustomHopper")
 
-    model = SAC.load("SAC_model_source")
+    model = SAC.load("SAC_model_"+args.train)
 
-    i=0
-    while i<1000:
-        obs = source_env.reset()
-        while True:
-            action, _states = model.predict(obs)
-            obs, rewards, dones, info = source_env.step(action)
-            source_env.render()
-            if dones: break
+    if args.test == 'source':
+        mean_reward, std_reward = evaluate_policy(model, source_env, n_eval_episodes=args.evalepisodes, render=True)
+        print(mean_reward,std_reward)
+    else: 
+        mean_reward, std_reward = evaluate_policy(model, target_env, n_eval_episodes=args.evalepisodes, render=True)
+        print(mean_reward,std_reward)
 
 
 if __name__ == '__main__':

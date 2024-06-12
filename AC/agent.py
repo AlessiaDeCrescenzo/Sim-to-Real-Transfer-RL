@@ -99,7 +99,7 @@ class Agent(object):
         #self.critic_optimizer = torch.optim.Adam(critic.parameters(), lr=)
 
         self.gamma = 0.99
-        self.I=1
+        #self.I=1
         self.states = []
         self.next_states = []
         self.action_log_probs = []
@@ -130,7 +130,6 @@ class Agent(object):
         # TASK 3:
         #   compute boostrapped discounted return estimates
         returns = bootstrapped_rewards(rewards,next_state_values,self.gamma)
-        #returns.detach()
         #   compute advantage terms
         with torch.no_grad():
             advantages = returns - state_values
@@ -152,7 +151,7 @@ class Agent(object):
         
         #self.critic_optimizer.step()
 
-        self.I=self.I*self.gamma
+        #self.I=self.I*self.gamma
 
         return        
 
