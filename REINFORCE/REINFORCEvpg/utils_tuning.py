@@ -5,7 +5,7 @@ import gym
 from env.custom_hopper import *
 from agent import AgentREINFORCE, PolicyREINFORCE
 
-def train(train_env='CustomHopper-source-v0', device='cpu', episodes=20, lr=1e-3, gamma=0.99, hidden_size=64):    #solo per ora numero davvero basso di episodi
+def train(train_env='CustomHopper-source-v0', device='cpu', episodes=100, lr=1e-3, gamma=0.99, hidden=64):    #solo per ora numero davvero basso di episodi
     env = gym.make(train_env)
 
     observation_space_dim = env.observation_space.shape[-1]
@@ -15,7 +15,7 @@ def train(train_env='CustomHopper-source-v0', device='cpu', episodes=20, lr=1e-3
     agent = AgentREINFORCE(policy, device=device)
     agent.optimizer = torch.optim.Adam(policy.parameters(), lr=lr)
     agent.gamma = gamma
-    policy.hidden = hidden_size
+    policy.hidden = hidden
 
     #print('Action space:', env.action_space)
     #print('State space:', env.observation_space)
@@ -40,7 +40,7 @@ def train(train_env='CustomHopper-source-v0', device='cpu', episodes=20, lr=1e-3
 
     return agent
 
-def test(agent, episodes=100, test_env='CustomHopper-source-v0'):
+def test(agent, episodes=20, test_env='CustomHopper-source-v0'):
     env = gym.make(test_env)
 
     test_return = 0

@@ -14,11 +14,11 @@ def discount_rewards(r, gamma):
 
 
 class PolicyREINFORCE(torch.nn.Module):
-    def __init__(self, state_space, action_space):
+    def __init__(self, state_space, action_space, hidden=64):
         super().__init__()
         self.state_space = state_space
         self.action_space = action_space
-        self.hidden = 64
+        self.hidden = hidden
         self.tanh = torch.nn.Tanh()
 
         """
@@ -58,12 +58,13 @@ class PolicyREINFORCE(torch.nn.Module):
 
 
 class AgentREINFORCE(object):
-    def __init__(self, policy, device='cpu'):
+    def __init__(self, policy, device='cpu',lr=1e-3, gamma=0.99):
+        
         self.train_device = device
         self.policy = policy.to(self.train_device)
-        self.optimizer = torch.optim.Adam(policy.parameters(), lr=1e-3)
+        self.optimizer = torch.optim.Adam(policy.parameters(), lr=lr)
 
-        self.gamma = 0.99
+        self.gamma = gamma
         self.states = []
         self.next_states = []
         self.action_log_probs = []

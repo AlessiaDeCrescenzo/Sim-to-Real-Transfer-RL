@@ -6,6 +6,7 @@ import gym
 
 from env.custom_hopper import *
 from agent import AgentREINFORCE, PolicyREINFORCE
+import pickle
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -13,7 +14,7 @@ def parse_args():
     parser.add_argument('--device', default='cpu', type=str, help='network device [cpu, cuda]')
     parser.add_argument('--render', default=False, action='store_true', help='Render the simulator')
     parser.add_argument('--episodes', default=10, type=int, help='Number of test episodes')
-
+    parser.add_argument('--fine-tuning-params', default='best_fine_tuning_result.pkl', type=str, help='Path to fine-tuning parameters')
     return parser.parse_args()
 
 args = parse_args()
@@ -27,14 +28,19 @@ def main():
 	print('Action space:', env.action_space)
 	print('State space:', env.observation_space)
 	print('Dynamics parameters:', env.get_parameters())
+
+	# Load fine-tuning parameters
+	with open(args.fine_tuning_params, 'rb') as infile:
+		fine_tuning_params = pickle.load(infile)[1]  # [1] because you only need the config, not the score
+
 	
 	observation_space_dim = env.observation_space.shape[-1]
 	action_space_dim = env.action_space.shape[-1]
-
-	policy = PolicyREINFORCE(observation_space_dim, action_space_dim)
+    
+	
+	policy = PolicyREINFORCE(observation_space_dim, action_space_dim, hidden=fine_tuning_params['hidden_size'])
 	policy.load_state_dict(torch.load(args.model), strict=True)
-
-	agent = AgentREINFORCE(policy, device=args.device)
+	agent = AgentREINFORCE(policy, device=args.device, lr=fine_tuning_params['lr'], gamma=fine_tuning_params['gamma'])
 
 	for episode in range(args.episodes):
 		done = False
