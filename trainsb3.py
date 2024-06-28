@@ -26,7 +26,7 @@ def parse_args():
     parser.add_argument('--source-log-path', type=str)
     parser.add_argument('--target-log-path', type=str)
     parser.add_argument('--episodes', default=100_000, type=int)
-    parser.add_argument('--evalepisodes',default=1000,type=int)
+    parser.add_argument('--evalepisodes',default=100,type=int)
     return parser.parse_args()
 
 args = parse_args()
@@ -83,23 +83,23 @@ def main():
     if args.train == 'source':
         source_env=Monitor(source_env,args.source_log_path,allow_early_resets=True)
         train_env = source_env # sets the train to source
-        source_eval_callback = EvalCallback(eval_env=source_env, n_eval_episodes=50, eval_freq=5000, log_path=args.source_log_path) # Create callback that also evaluates agent for 50 episodes every 15000 source environment steps.
+        source_eval_callback = EvalCallback(eval_env=source_env, n_eval_episodes=50, eval_freq=15000, log_path=args.source_log_path) # Create callback that also evaluates agent for 50 episodes every 15000 source environment steps.
         callback_list.append(source_eval_callback)
     else:
         target_env=Monitor(target_env,args.target_log_path)
         train_env = target_env
-        target_eval_callback = EvalCallback(eval_env=target_env, n_eval_episodes=50, eval_freq=5000, log_path=args.target_log_path) # Create callback that evaluates agent for 50 episodes every 15000 training environment steps.
+        target_eval_callback = EvalCallback(eval_env=target_env, n_eval_episodes=50, eval_freq=15000, log_path=args.target_log_path) # Create callback that evaluates agent for 50 episodes every 15000 training environment steps.
         callback_list.append(target_eval_callback)
 
     callback = CallbackList(callback_list)
 
     model = SAC('MlpPolicy', batch_size=128, learning_rate=0.00025, env=train_env, verbose=1, device='cpu')
-    model.learn(total_timesteps=int(1e5), callback=callback, tb_log_name=args.train)
+    model.learn(total_timesteps=int(2e5), callback=callback, tb_log_name=args.train)
     model.save("SAC_model_"+args.train)
 
     # Plot the results
     log_path = args.target_log_path if args.train == 'target' else args.source_log_path
-    plot_results([log_path], 1e5, 't', "SAC CustomHopper")
+    plot_results([log_path], 2e5, 't', "SAC CustomHopper")
 
     model = SAC.load("SAC_model_"+args.train)
 
