@@ -7,6 +7,17 @@ import gym
 from env.custom_hopper import *
 from agent import AgentREINFORCE, PolicyREINFORCE
 import pickle
+from env.Wrapper import TrackRewardWrapper
+import matplotlib.pyplot as plt
+
+def plot_rewards(reward_buffer, num_episodes):
+    plt.figure(figsize=(10, 6))
+    plt.plot(range(1, num_episodes + 1), reward_buffer, marker='o', linestyle='-')
+    plt.xlabel('Episode')
+    plt.ylabel('Cumulative Reward')
+    plt.title('Cumulative Reward over Episodes')
+    plt.grid(True)
+    plt.show()
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -24,6 +35,7 @@ def main():
 
 	#env = gym.make('CustomHopper-source-v0')
 	env = gym.make('CustomHopper-target-v0')
+	env=TrackRewardWrapper(env)
 
 	print('Action space:', env.action_space)
 	print('State space:', env.observation_space)
@@ -59,6 +71,8 @@ def main():
 			test_reward += reward
 
 		print(f"Episode: {episode} | Return: {test_reward}")
+	
+	plot_rewards(env.buffer, len(env.buffer))
 	
 
 if __name__ == '__main__':

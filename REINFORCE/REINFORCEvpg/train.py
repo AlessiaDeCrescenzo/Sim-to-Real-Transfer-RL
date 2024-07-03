@@ -9,12 +9,21 @@ from env.custom_hopper import *
 from agent import AgentREINFORCE, PolicyREINFORCE
 import pickle #dovrebbe servire per leggere il file
 import numpy as np
+from env.Wrapper import TrackRewardWrapper
 
+def plot_rewards(reward_buffer, num_episodes):
+    plt.figure(figsize=(10, 6))
+    plt.plot(range(1, num_episodes + 1), reward_buffer, marker='o', linestyle='-')
+    plt.xlabel('Episode')
+    plt.ylabel('Cumulative Reward')
+    plt.title('Cumulative Reward over Episodes')
+    plt.grid(True)
+    plt.show()
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--n-episodes', default=100000, type=int, help='Number of training episodes')    #default=100000
-    parser.add_argument('--print-every', default=5000, type=int, help='Print info every <> episodes')  #default=20000
+    parser.add_argument('--n-episodes', default=1000, type=int, help='Number of training episodes')    #default=100000
+    parser.add_argument('--print-every', default=500, type=int, help='Print info every <> episodes')  #default=20000
     parser.add_argument('--device', default='cpu', type=str, help='Network device [cpu, cuda]')
     parser.add_argument('--fine-tuning-params', default='best_fine_tuning_result.pkl', type=str, help='Path to fine-tuning parameters')  #per leggere iperparameter del fine tunig
     return parser.parse_args()
@@ -31,6 +40,7 @@ def seed_everything(seed,env):
 def main():
     env = gym.make('CustomHopper-source-v0')
     # env = gym.make('CustomHopper-target-v0')
+    env=TrackRewardWrapper(env)
 
     seed_everything(316619,env)
     #env.seed(315304)
@@ -91,6 +101,8 @@ def main():
     plt.title('Episode returns over time')
     plt.legend()
     plt.show()
+
+    plot_rewards(env.buffer, len(env.buffer))
 
 if __name__ == '__main__':
     main()
