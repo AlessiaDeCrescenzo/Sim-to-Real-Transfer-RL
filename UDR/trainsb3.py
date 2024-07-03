@@ -66,15 +66,28 @@ def plot_results(log_paths, timesteps, xaxis, task_name):
     plt.show()
 
 def main():
-    source_env = gym.make('CustomHopperUDR-source-v0')
-    target_env=gym.make('CustomHopperUDR-target-v0')
+
+    params = {
+			'thigh_mean': 3.92699082,
+			'leg_mean': 2.71433605,
+			'foot_mean': 5.0893801,
+			'hw': 0.5,
+			'thigh_hw': 0.5,
+			'leg_hw': 0.5,
+			'foot_hw': 1.5
+			}
+	
+    bounds=compute_bounds(params)
+
+    source_env = gym.make('CustomHopperUDR-source-v0',bounds=bounds)
+    target_env=gym.make('CustomHopperUDR-target-v0',bounds=bounds)
 
     #source_env = make_vec_env('CustomHopper-source-v0', n_envs=N_ENVS, vec_env_cls=DummyVecEnv, monitor_dir=args.source_log_path)
     #target_env = make_vec_env('CustomHopper-target-v0', n_envs=N_ENVS, vec_env_cls=DummyVecEnv, monitor_dir=args.target_log_path)
 
     #print('State space:', train_env.observation_space)  # state-space
     #print('Action space:', train_env.action_space)  # action-space
-    #print('Dynamics parameters:', train_env.get_parameters())  # masses of each link of the Hopper
+    #print('Dynamics parameters:', target_env.get_parameters())  # masses of each link of the Hopper
 
     #
     # TASK 4 & 5: train and test policies on the Hopper env with stable-baselines3
@@ -98,27 +111,15 @@ def main():
 
     callback = CallbackList(callback_list)
 
-    params = {
-			'thigh_mean': 3.92699082,
-			'leg_mean': 2.71433605,
-			'foot_mean': 5.0893801,
-			'hw': 0.5,
-			'thigh_hw': 0.5,
-			'leg_hw': 0.5,
-			'foot_hw': 0.5
-			}
-	
-    train_env.bounds=compute_bounds(params)
-
     train_env.dr=True
     model = SAC('MlpPolicy', batch_size=128, learning_rate=0.00025, env=train_env, verbose=1, device='cpu')
-    model.learn(total_timesteps=int(2e5), callback=callback, tb_log_name=args.train)
+    model.learn(total_timesteps=int(5e3), callback=callback, tb_log_name=args.train)
     model.save("SAC_model_UDR"+args.train)
     train_env.dr=False
 
     # Plot the results
     log_path = args.target_log_path if args.train == 'target' else args.source_log_path
-    plot_results([log_path], 2e5, 't', "SAC CustomHopper")
+    plot_results([log_path], 5e3, 't', "SAC CustomHopper")
 
     model = SAC.load("SAC_model_"+args.train)
 

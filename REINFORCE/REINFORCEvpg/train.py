@@ -21,9 +21,19 @@ def parse_args():
 
 args = parse_args()
 
+def seed_everything(seed,env):
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
+    env.seed(seed)
+
 def main():
     env = gym.make('CustomHopper-source-v0')
     # env = gym.make('CustomHopper-target-v0')
+
+    seed_everything(316619,env)
+    #env.seed(315304)
 
     print('Action space:', env.action_space)
     print('State space:', env.observation_space)
@@ -62,20 +72,20 @@ def main():
             train_reward += reward
 
         returns.append(train_reward)
-        mean_rewards = np.mean(returns[-100:])     #-100
+        mean_rewards = np.mean(returns[-1000:])     #-100
         avg_returns.append(mean_rewards)# Calculate average return
         agent.update_policy()  # Update policy at the end of the episode
 
         if (episode + 1) % args.print_every == 0:
             print('Training episode:', episode)
             print('Episode return:', train_reward)
-            print(f'Mean return (last 100 episodes): {mean_rewards}')
+            print(f'Mean return (last 1000 episodes): {mean_rewards}')
 
 
     torch.save(agent.policy.state_dict(), "model_reinforce_2.mdl")
 
     plt.plot(returns, label='Episode Return')
-    plt.plot(avg_returns, label='Average Return (last 100 episodes)', linestyle='--') 
+    plt.plot(avg_returns, label='Average Return (last 1000 episodes)', linestyle='--') 
     plt.xlabel('Episode')
     plt.ylabel('Return')
     plt.title('Episode returns over time')

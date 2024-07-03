@@ -4,6 +4,7 @@ import itertools
 import pickle
 from multiprocessing import Pool
 from tqdm import tqdm
+import numpy as np
 from utils_tuning import train, test
 
 params = {
@@ -14,9 +15,16 @@ params = {
 
 MULTIPLE_STARTS = 4
 
+def seed_everything(seed):
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
+
 def pool_tt(args):
-    agent = train(**args)
-    return test(agent)
+    seed=np.random.randint(1)
+    agent = train(seed=seed,**args)
+    return test(agent,seed=seed)
 
 results = []
 
@@ -33,7 +41,7 @@ results.sort(reverse=True, key=lambda x: x[0])
 
 # Print the top 6 configurations
 print("Top 6 configurations:")
-for i in range(min(6, len(results))):
+for i in range(min(18, len(results))):
     print(f"Rank {i+1}: Score = {results[i][0]}, Config = {results[i][1]}")
 
 #save results

@@ -6,15 +6,15 @@ from tqdm import tqdm
 from utils_tuning import train, test
 
 # Set the number of episodes for fine-tuning
-FINE_TUNING_TRAIN_EPISODES = 300
-FINE_TUNING_TEST_EPISODES = 50
+FINE_TUNING_TRAIN_EPISODES = 1000
+FINE_TUNING_TEST_EPISODES = 100
 
 
 MULTIPLE_STARTS = 4
 
 def pool_tt(args):
     train_episodes = args.pop('train_episodes', 1000)
-    test_episodes = args.pop('test_episodes', 50)
+    test_episodes = args.pop('test_episodes', 100)
     agent = train(**args)
     return test(agent)
 

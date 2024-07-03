@@ -5,8 +5,12 @@ import gym
 from env.custom_hopper import *
 from agent import AgentREINFORCE, PolicyREINFORCE
 
-def train(train_env='CustomHopper-source-v0', device='cpu', episodes=100, lr=1e-3, gamma=0.99, hidden=64):    #solo per ora numero davvero basso di episodi
+
+
+def train(train_env='CustomHopper-source-v0', device='cpu', episodes=100, lr=1e-3, gamma=0.99, hidden=64,seed=None):    #solo per ora numero davvero basso di episodi
     env = gym.make(train_env)
+
+    env.seed(seed)
 
     observation_space_dim = env.observation_space.shape[-1]
     action_space_dim = env.action_space.shape[-1]
@@ -40,8 +44,10 @@ def train(train_env='CustomHopper-source-v0', device='cpu', episodes=100, lr=1e-
 
     return agent
 
-def test(agent, episodes=20, test_env='CustomHopper-source-v0'):
+def test(agent, episodes=20, test_env='CustomHopper-source-v0',seed=None):
     env = gym.make(test_env)
+
+    env.seed(seed)
 
     test_return = 0
     for episode in range(episodes):

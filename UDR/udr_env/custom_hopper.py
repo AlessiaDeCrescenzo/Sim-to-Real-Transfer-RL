@@ -4,7 +4,7 @@ domain randomization optimization.
     See more at: https://www.gymlibrary.dev/environments/mujoco/hopper/
 """
 from copy import deepcopy
-
+from torch.distributions import Uniform
 import numpy as np
 import gym
 from gym import utils
@@ -12,13 +12,14 @@ from .mujoco_env import MujocoEnv
 
 
 class CustomHopper(MujocoEnv, utils.EzPickle):
-    def __init__(self, domain=None):
+    def __init__(self,bounds=None,distribution=Uniform, domain=None):
         MujocoEnv.__init__(self, 4)
         utils.EzPickle.__init__(self)
 
         self.original_masses = np.copy(self.sim.model.body_mass[1:])    # Default link masses
         self.dr = False
-        self.bounds=None
+        self.bounds=bounds #it would be nice to have the same structure for this and the Doraemon env
+        
 
         if domain == 'source':  # Source environment has an imprecise torso mass (1kg shift)
             self.sim.model.body_mass[1] -= 1.0

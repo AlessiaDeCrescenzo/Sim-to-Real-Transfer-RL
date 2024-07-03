@@ -51,7 +51,7 @@ def plot_results(log_paths, timesteps, xaxis, task_name):
     
     plt.figure(figsize=(8, 6))
     for i, df in enumerate(dfs):
-        plt.plot(df[xaxis], df['r'])
+        plt.plot(df['t'], df['r'])
 
     plt.xlabel(xaxis)
     plt.ylabel('Reward')
@@ -64,14 +64,6 @@ def main():
     source_env = gym.make('CustomHopper-source-v0')
     target_env=gym.make('CustomHopper-target-v0')
 
-    #source_env = make_vec_env('CustomHopper-source-v0', n_envs=N_ENVS, vec_env_cls=DummyVecEnv, monitor_dir=args.source_log_path)
-    #target_env = make_vec_env('CustomHopper-target-v0', n_envs=N_ENVS, vec_env_cls=DummyVecEnv, monitor_dir=args.target_log_path)
-
-    #print('State space:', train_env.observation_space)  # state-space
-    #print('Action space:', train_env.action_space)  # action-space
-    #print('Dynamics parameters:', train_env.get_parameters())  # masses of each link of the Hopper
-
-    #
     # TASK 4 & 5: train and test policies on the Hopper env with stable-baselines3
     
     stop_callback = StopTrainingOnMaxEpisodes(max_episodes=MAX_EPS, verbose=1) # callback for stopping at 100_000 episodes
@@ -83,23 +75,23 @@ def main():
     if args.train == 'source':
         source_env=Monitor(source_env,args.source_log_path,allow_early_resets=True)
         train_env = source_env # sets the train to source
-        source_eval_callback = EvalCallback(eval_env=source_env, n_eval_episodes=50, eval_freq=15000, log_path=args.source_log_path) # Create callback that also evaluates agent for 50 episodes every 15000 source environment steps.
+        source_eval_callback = EvalCallback(eval_env=source_env, n_eval_episodes=50, eval_freq=1000, log_path=args.source_log_path) # Create callback that also evaluates agent for 50 episodes every 15000 source environment steps.
         callback_list.append(source_eval_callback)
     else:
         target_env=Monitor(target_env,args.target_log_path)
         train_env = target_env
-        target_eval_callback = EvalCallback(eval_env=target_env, n_eval_episodes=50, eval_freq=15000, log_path=args.target_log_path) # Create callback that evaluates agent for 50 episodes every 15000 training environment steps.
+        target_eval_callback = EvalCallback(eval_env=target_env, n_eval_episodes=50, eval_freq=10000, log_path=args.target_log_path) # Create callback that evaluates agent for 50 episodes every 15000 training environment steps.
         callback_list.append(target_eval_callback)
 
     callback = CallbackList(callback_list)
 
-    model = SAC('MlpPolicy', batch_size=128, learning_rate=0.00025, env=train_env, verbose=1, device='cpu')
-    model.learn(total_timesteps=int(2e5), callback=callback, tb_log_name=args.train)
+    model = SAC('MlpPolicy', batch_size=128, learning_rate=2.5e-4, env=train_env, verbose=1, device='cpu')
+    model.learn(total_timesteps=int(1e3), callback=callback, tb_log_name=args.train)
     model.save("SAC_model_"+args.train)
 
     # Plot the results
     log_path = args.target_log_path if args.train == 'target' else args.source_log_path
-    plot_results([log_path], 2e5, 't', "SAC CustomHopper")
+    plot_results([log_path], 30, 't', "SAC CustomHopper")
 
     model = SAC.load("SAC_model_"+args.train)
 
