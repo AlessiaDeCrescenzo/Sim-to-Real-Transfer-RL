@@ -5,7 +5,9 @@
     pipeline with an RL algorithm of your choice between PPO and SAC.
 """
 import gym
+import pickle
 from udr_env.custom_hopper import *
+from udr_env.Wrapper import TrackRewardWrapper
 from stable_baselines3 import SAC
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.results_plotter import load_results, ts2xy, plot_results
@@ -18,20 +20,28 @@ import argparse
 import matplotlib.pyplot as plt
 import pandas as pd
 
+def plot_rewards(reward_buffer, num_episodes):
+    plt.figure(figsize=(10, 6))
+    plt.plot(range(1, num_episodes + 1), reward_buffer, marker='o', linestyle='-')
+    plt.xlabel('Episode')
+    plt.ylabel('Cumulative Reward')
+    plt.title('Cumulative Reward over Episodes')
+    plt.grid(True)
+    plt.show()
 
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--train', type=str)
     parser.add_argument('--test', type=str)
-    parser.add_argument('--source-log-path', type=str)
-    parser.add_argument('--target-log-path', type=str)
     parser.add_argument('--episodes', default=100_000, type=int)
-    parser.add_argument('--evalepisodes',default=100,type=int)
+    parser.add_argument('--evalepisodes',default=250,type=int)
+    parser.add_argument('--fine_tuning_parameters', default='UDR/result_SAC.pkl', type=str, help='Path to fine-tuning parameters')
     return parser.parse_args()
+    
 
 args = parse_args()
 
-if args.train is None or args.source_log_path is None or args.target_log_path is None:
+if args.train is None or args.test is None:
     exit('Arguments required')
 
 
@@ -43,47 +53,18 @@ def compute_bounds(params):
     bounds = list((m-hw,m+hw) for m,hw in [(params['thigh_mean'],params['thigh_hw']),(params['leg_mean'],params['leg_hw']),(params['foot_mean'],params['foot_hw'])])
     return bounds
 
-
-def plot_results(log_paths, timesteps, xaxis, task_name):
-    dfs = []
-    for log_path in log_paths:
-        if os.path.isdir(log_path):  # Check if the path is a directory
-            # If the path is a directory, assume it contains monitor files and get the list of files inside
-            monitor_files = [os.path.join(log_path, file) for file in os.listdir(log_path) if file.endswith('.csv')]
-            dfs.extend([pd.read_csv(file, skiprows=1) for file in monitor_files])
-        else:
-            dfs.append(pd.read_csv(log_path, skiprows=1))  # Skip the header row
-    
-    plt.figure(figsize=(8, 6))
-    for i, df in enumerate(dfs):
-        plt.plot(df[xaxis], df['r'])
-
-    plt.xlabel(xaxis)
-    plt.ylabel('Reward')
-    plt.title(f'{task_name} - Training Progress')
-    plt.legend()
-    plt.grid()
-    plt.show()
-
 def main():
 
-    params = {
-			'thigh_mean': 3.92699082,
-			'leg_mean': 2.71433605,
-			'foot_mean': 5.0893801,
-			'hw': 0.5,
-			'thigh_hw': 0.5,
-			'leg_hw': 0.5,
-			'foot_hw': 1.5
-			}
+    with open('UDR/best_udr_tuning_result.pkl', 'rb') as infile:
+        params = pickle.load(infile)[0] 
 	
+    print(params)
+
     bounds=compute_bounds(params)
 
     source_env = gym.make('CustomHopperUDR-source-v0',bounds=bounds)
     target_env=gym.make('CustomHopperUDR-target-v0',bounds=bounds)
 
-    #source_env = make_vec_env('CustomHopper-source-v0', n_envs=N_ENVS, vec_env_cls=DummyVecEnv, monitor_dir=args.source_log_path)
-    #target_env = make_vec_env('CustomHopper-target-v0', n_envs=N_ENVS, vec_env_cls=DummyVecEnv, monitor_dir=args.target_log_path)
 
     #print('State space:', train_env.observation_space)  # state-space
     #print('Action space:', train_env.action_space)  # action-space
@@ -99,36 +80,46 @@ def main():
     callback_list = [stop_callback]
 
     if args.train == 'source':
-        source_env=Monitor(source_env,args.source_log_path,allow_early_resets=True)
+        source_env=TrackRewardWrapper(source_env)
         train_env = source_env # sets the train to source
-        source_eval_callback = EvalCallback(eval_env=source_env, n_eval_episodes=50, eval_freq=5000, log_path=args.source_log_path) # Create callback that also evaluates agent for 50 episodes every 15000 source environment steps.
+        source_eval_callback = EvalCallback(eval_env=source_env, n_eval_episodes=50, eval_freq=5000) # Create callback that also evaluates agent for 50 episodes every 15000 source environment steps.
         callback_list.append(source_eval_callback)
     else:
-        target_env=Monitor(target_env,args.target_log_path)
+        target_env=TrackRewardWrapper(target_env)
         train_env = target_env
-        target_eval_callback = EvalCallback(eval_env=target_env, n_eval_episodes=50, eval_freq=5000, log_path=args.target_log_path) # Create callback that evaluates agent for 50 episodes every 15000 training environment steps.
+        target_eval_callback = EvalCallback(eval_env=target_env, n_eval_episodes=50, eval_freq=5000) # Create callback that evaluates agent for 50 episodes every 15000 training environment steps.
         callback_list.append(target_eval_callback)
 
     callback = CallbackList(callback_list)
 
-    train_env.dr=True
-    model = SAC('MlpPolicy', batch_size=128, learning_rate=0.00025, env=train_env, verbose=1, device='cpu')
-    model.learn(total_timesteps=int(5e3), callback=callback, tb_log_name=args.train)
+    with open(args.fine_tuning_parameters, 'rb') as infile:
+        fine_tuning_params = pickle.load(infile)[1]  # [1] because you only need the config, not the score
+
+    train_env.set_dr_training(True)
+    model = SAC('MlpPolicy', batch_size=fine_tuning_params['batch_size'], learning_rate=fine_tuning_params['learning_rate'], env=train_env, verbose=1, device='cpu',seed=315304)
+    model.learn(total_timesteps=int(2.5e2), callback=callback, tb_log_name=args.train)
     model.save("SAC_model_UDR"+args.train)
-    train_env.dr=False
+    train_env.set_dr_training(False)
 
-    # Plot the results
-    log_path = args.target_log_path if args.train == 'target' else args.source_log_path
-    plot_results([log_path], 5e3, 't', "SAC CustomHopper")
+    model = SAC.load("SAC_model_UDR"+args.train)
 
-    model = SAC.load("SAC_model_"+args.train)
-
+    source_env = gym.make('CustomHopperUDR-source-v0',bounds=bounds)
+    target_env=gym.make('CustomHopperUDR-target-v0',bounds=bounds)
     if args.test == 'source':
-        mean_reward, std_reward = evaluate_policy(model, source_env, n_eval_episodes=args.evalepisodes, render=True)
+        eval_env= TrackRewardWrapper(source_env)
+        eval_env.set_dr_training(False)
+        mean_reward, std_reward = evaluate_policy(model, eval_env, n_eval_episodes=args.evalepisodes, render=True)
         print(mean_reward,std_reward)
     else: 
-        mean_reward, std_reward = evaluate_policy(model, target_env, n_eval_episodes=args.evalepisodes, render=True)
+        eval_env= TrackRewardWrapper(target_env)
+        eval_env.set_dr_training(False)
+        mean_reward, std_reward = evaluate_policy(model, eval_env, n_eval_episodes=args.evalepisodes, render=True)
         print(mean_reward,std_reward)
+
+    if args.train == 'source':
+        save_rewards('SAC.txt','SAC_UDR_'+args.train, train_env.succ_metric_buffer)
+    
+    save_rewards('SAC_test_UDR.txt','SAC_UDR_'+args.train+'_'+args.test,test_env.succ_metric_buffer)
 
 
 if __name__ == '__main__':

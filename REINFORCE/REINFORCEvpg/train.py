@@ -10,6 +10,7 @@ from agent import AgentREINFORCE, PolicyREINFORCE
 import pickle #dovrebbe servire per leggere il file
 import numpy as np
 from env.Wrapper import TrackRewardWrapper
+from utils_tuning import set_seed, save_rewards
 
 def plot_rewards(reward_buffer, num_episodes):
     plt.figure(figsize=(10, 6))
@@ -22,33 +23,25 @@ def plot_rewards(reward_buffer, num_episodes):
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--n-episodes', default=1000, type=int, help='Number of training episodes')    #default=100000
-    parser.add_argument('--print-every', default=500, type=int, help='Print info every <> episodes')  #default=20000
+    parser.add_argument('--n-episodes', default=30000, type=int, help='Number of training episodes')    #default=30000
+    parser.add_argument('--print-every', default=1000, type=int, help='Print info every <> episodes')  #default=1000
     parser.add_argument('--device', default='cpu', type=str, help='Network device [cpu, cuda]')
-    parser.add_argument('--fine-tuning-params', default='best_fine_tuning_result.pkl', type=str, help='Path to fine-tuning parameters')  #per leggere iperparameter del fine tunig
+    parser.add_argument('--fine_tuning_params', default='REINFORCE/REINFORCEvpg/result_REINFORCE.pkl', type=str, help='Path to fine-tuning parameters')  #per leggere iperparameter del fine tunig
+    parser.add_argument('--seed',default=0,type=int,help='seed for default')
     return parser.parse_args()
 
 args = parse_args()
 
-def seed_everything(seed,env):
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)
-    torch.backends.cudnn.deterministic = True
-    env.seed(seed)
-
 def main():
     env = gym.make('CustomHopper-source-v0')
-    # env = gym.make('CustomHopper-target-v0')
     env=TrackRewardWrapper(env)
 
-    seed_everything(316619,env)
-    #env.seed(315304)
+    set_seed(args.seed)
+    env.seed(args.seed)
 
     print('Action space:', env.action_space)
     print('State space:', env.observation_space)
     print('Dynamics parameters:', env.get_parameters())
-
 
 
     # Load fine-tuning parameters
@@ -82,7 +75,7 @@ def main():
             train_reward += reward
 
         returns.append(train_reward)
-        mean_rewards = np.mean(returns[-1000:])     #-100
+        mean_rewards = np.mean(returns[-500:])     #-100
         avg_returns.append(mean_rewards)# Calculate average return
         agent.update_policy()  # Update policy at the end of the episode
 
@@ -92,17 +85,17 @@ def main():
             print(f'Mean return (last 1000 episodes): {mean_rewards}')
 
 
-    torch.save(agent.policy.state_dict(), "model_reinforce_2.mdl")
+    torch.save(agent.policy.state_dict(), "REINFORCE/REINFORCEvpg/model_reinforce.mdl")
 
     plt.plot(returns, label='Episode Return')
-    plt.plot(avg_returns, label='Average Return (last 1000 episodes)', linestyle='--') 
+    plt.plot(avg_returns, label='Average Return (last 500 episodes)', linestyle='--') 
     plt.xlabel('Episode')
     plt.ylabel('Return')
     plt.title('Episode returns over time')
     plt.legend()
     plt.show()
 
-    plot_rewards(env.buffer, len(env.buffer))
+    save_rewards('Basic_algorithms.txt',"Reinforce vanilla", env.succ_metric_buffer)
 
 if __name__ == '__main__':
     main()

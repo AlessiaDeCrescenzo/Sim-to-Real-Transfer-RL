@@ -9,6 +9,7 @@ from agent import AgentREINFORCE, PolicyREINFORCE
 import pickle
 from env.Wrapper import TrackRewardWrapper
 import matplotlib.pyplot as plt
+from utils_tuning import set_seed
 
 def plot_rewards(reward_buffer, num_episodes):
     plt.figure(figsize=(10, 6))
@@ -21,21 +22,22 @@ def plot_rewards(reward_buffer, num_episodes):
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', default='model_reinforce_2.mdl', type=str, help='Model path')
+    parser.add_argument('--model', default='REINFORCE/REINFORCEvpg/model_reinforce.mdl', type=str, help='Model path')
     parser.add_argument('--device', default='cpu', type=str, help='network device [cpu, cuda]')
     parser.add_argument('--render', default=True, action='store_true', help='Render the simulator')
     parser.add_argument('--episodes', default=10, type=int, help='Number of test episodes')
-    parser.add_argument('--fine-tuning-params', default='best_fine_tuning_result.pkl', type=str, help='Path to fine-tuning parameters')
+    parser.add_argument('--fine_tuning_params', default='REINFORCE/REINFORCEvpg/result_REINFORCE.pkl', type=str, help='Path to fine-tuning parameters')
     return parser.parse_args()
 
 args = parse_args()
 
 
 def main():
-
-	#env = gym.make('CustomHopper-source-v0')
-	env = gym.make('CustomHopper-target-v0')
+	set_seed(315304)
+	
+	env = gym.make('CustomHopper-source-v0')
 	env=TrackRewardWrapper(env)
+	env.seed(315304)
 
 	print('Action space:', env.action_space)
 	print('State space:', env.observation_space)
