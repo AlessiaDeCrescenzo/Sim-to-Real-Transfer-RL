@@ -1,4 +1,5 @@
 import gym
+import numpy as np
 
 class TrackRewardWrapper(gym.Wrapper):
     def __init__(self, env):
@@ -16,12 +17,12 @@ class TrackRewardWrapper(gym.Wrapper):
         if done:
             if self.expose_episode_stats:
                 self.buffer.append(self.exposed_cum_reward)
-                self.succ_metric_buffer.append(self.exposed_cum_reward)  # Assuming the metric is the cumulative reward
+                self.succ_metric_buffer.append(np.mean(self.buffer[-500:]))  # Assuming the metric is the cumulative reward
                 self.ready_to_update_buffer = False
 
         return observation, reward, done, info
 
     def reset(self, **kwargs):
-        self.exposed_cum_reward = 0
         self.ready_to_update_buffer = True
+        self.exposed_cum_reward = 0
         return self.env.reset(**kwargs)

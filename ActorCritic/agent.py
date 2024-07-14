@@ -33,11 +33,11 @@ class ActorCritic(torch.nn.Module):
         
         # Learned standard deviation for exploration at training time 
         self.sigma_activation = F.softplus
-        init_sigma = 0.5
+        init_sigma = 0.9
         self.sigma = torch.nn.Parameter(torch.zeros(self.action_space)+init_sigma)
 
         self.fc1_critic = torch.nn.Linear(state_space, self.hidden)
-        self.fc2_critic = torch.nn.Linear(self.hidden, self.hidden)
+        #self.fc2_critic = torch.nn.Linear(self.hidden, self.hidden)
         self.fc4_critic = torch.nn.Linear(self.hidden, 1)
 
         self.init_weights()
@@ -61,7 +61,7 @@ class ActorCritic(torch.nn.Module):
         normal_dist = Normal(action_mean, sigma)
 
         x_critic = self.tanh(self.fc1_critic(x))
-        x_critic = self.tanh(self.fc2_critic(x_critic))
+        #x_critic = self.tanh(self.fc2_critic(x_critic))
         #x_critic = self.tanh(self.fc3_critic(x_critic))
         value = self.fc4_critic(x_critic)
 
@@ -101,7 +101,6 @@ class Agent(object):
         # TASK 3:
         #   compute boostrapped discounted return estimates
         returns = bootstrapped_rewards(rewards,next_state_values,self.gamma)
-        returns = (returns - returns.mean()) / (returns.std())
         #   compute advantage terms
         advantages = returns - state_values
         #   compute actor loss and critic loss

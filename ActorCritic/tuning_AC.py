@@ -21,7 +21,7 @@ def pool_tt(args):
     agent = train(**args) # Train the agent with the given parameters
     return test(agent) # Test the trained agent and return the test score
 
-seed_env=315304
+seed_env=3153
 
 results = []  # List to store the results of all parameter combinations
 set_seed(seed_env)
