@@ -25,8 +25,8 @@ train_env.set_dr_training(True)
 test_env=gym.make('CustomHopperUDR-source-v0',bounds=bounds)
 
 def train(args):
-    model = SAC('MlpPolicy', env=train_env, device='cpu', **args, verbose=0) 
-    model.learn(total_timesteps=5e4)
+    model = SAC('MlpPolicy', env=train_env, device='cpu', **args, verbose=1,seed=315304) 
+    model.learn(total_timesteps=1.5e4)
     return model
 
 def test(model):

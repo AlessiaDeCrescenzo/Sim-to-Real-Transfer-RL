@@ -38,7 +38,6 @@ class ActorCritic(torch.nn.Module):
 
         self.fc1_critic = torch.nn.Linear(state_space, self.hidden)
         self.fc2_critic = torch.nn.Linear(self.hidden, self.hidden)
-        self.fc3_critic = torch.nn.Linear(self.hidden, self.hidden)
         self.fc4_critic = torch.nn.Linear(self.hidden, 1)
 
         self.init_weights()
@@ -46,7 +45,7 @@ class ActorCritic(torch.nn.Module):
     def init_weights(self):
         for m in self.modules():
             if type(m) is torch.nn.Linear:
-                torch.nn.init.xavier_uniform_(m.weight)
+                torch.nn.init.normal_(m.weight)
                 torch.nn.init.zeros_(m.bias)
 
     def forward(self, x):
@@ -55,7 +54,7 @@ class ActorCritic(torch.nn.Module):
         """
         x_actor = self.tanh(self.fc1_actor(x))
         x_actor = self.tanh(self.fc2_actor(x_actor))
-        #x_actor = self.tanh(self.fc3_actor(x_actor))
+        x_actor = self.tanh(self.fc3_actor(x_actor))
         action_mean = self.fc3_actor_mean(x_actor)
 
         sigma = self.sigma_activation(self.sigma)
@@ -63,7 +62,7 @@ class ActorCritic(torch.nn.Module):
 
         x_critic = self.tanh(self.fc1_critic(x))
         x_critic = self.tanh(self.fc2_critic(x_critic))
-        #x_critic= self.tanh(self.fc3_critic(x_critic))
+        #x_critic = self.tanh(self.fc3_critic(x_critic))
         value = self.fc4_critic(x_critic)
 
         return normal_dist,value
@@ -73,10 +72,7 @@ class Agent(object):
     def __init__(self, actorcritic, device='cpu',lr=1e-3, gamma=0.99):     #ho cambiato init perchè mi serve per gridsearch
         self.train_device = device
         self.actorcritic = actorcritic.to(self.train_device)
-        #self.critic = critic.to(self.train_device)
-        #params=[actor.parameters(), critic.parameters()] #itertools.chain(*params)
         self.optimizer = torch.optim.Adam(actorcritic.parameters(), lr=lr)
-        #self.critic_optimizer = torch.optim.Adam(critic.parameters(), lr=)
 
         self.gamma = gamma
         self.I=1
@@ -93,9 +89,6 @@ class Agent(object):
         next_states = torch.stack(self.next_states, dim=0).to(self.train_device).squeeze(-1)
         rewards = torch.stack(self.rewards, dim=0).to(self.train_device).squeeze(-1)
         done = torch.Tensor(self.done).to(self.train_device)
-        #I = torch.zeros_like(rewards)
-        #I[0]=1
-        #self.I=1
 
         self.states, self.next_states, self.action_log_probs, self.rewards, self.done = [], [], [], [], []
 
@@ -104,31 +97,27 @@ class Agent(object):
         next_state_values = next_state_values.squeeze(-1)
         state_values = state_values.squeeze(-1)
 
-        #for t in reversed(range(1, rewards.size(-1))):
-        #    I[t]= I[t-1]*self.gamma
-
-        #
+        
         # TASK 3:
         #   compute boostrapped discounted return estimates
         returns = bootstrapped_rewards(rewards,next_state_values,self.gamma)
+        returns = (returns - returns.mean()) / (returns.std())
         #   compute advantage terms
-        with torch.no_grad():
-            advantages = returns - state_values
+        advantages = returns - state_values
         #   compute actor loss and critic loss
 
         actor_loss = -torch.mean(action_log_probs * advantages.detach())
-        critic_loss = F.mse_loss(advantages.detach(), state_values)
-        loss=actor_loss+critic_loss
+        critic_loss = F.mse_loss(advantages, state_values)
+        #loss=actor_loss+critic_loss
         
         #   - compute gradients and step the optimizer
         # Perform optimization step
         self.optimizer.zero_grad()
         actor_loss.backward(retain_graph=True)
         critic_loss.backward()
-        torch.nn.utils.clip_grad_norm_(self.actorcritic.parameters(),1,0.5)
+        #torch.nn.utils.clip_grad_norm_(self.actorcritic.parameters(), 1)
         self.optimizer.step()
 
-        #self.I= self.gamma*self.I
 
         return        
 

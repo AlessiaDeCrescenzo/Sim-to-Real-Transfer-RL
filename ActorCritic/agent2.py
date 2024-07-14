@@ -33,7 +33,7 @@ class ActorCritic(torch.nn.Module):
         
         # Learned standard deviation for exploration at training time 
         self.sigma_activation = F.softplus
-        init_sigma = 0.5
+        init_sigma = 0.6
         self.sigma = torch.nn.Parameter(torch.zeros(self.action_space)+init_sigma)
 
         self.fc1_critic = torch.nn.Linear(state_space, self.hidden)
@@ -45,7 +45,7 @@ class ActorCritic(torch.nn.Module):
     def init_weights(self):
         for m in self.modules():
             if type(m) is torch.nn.Linear:
-                torch.nn.init.xavier_uniform_(m.weight)
+                torch.nn.init.normal_(m.weight)
                 torch.nn.init.zeros_(m.bias)
 
     def forward(self, x):
@@ -54,7 +54,7 @@ class ActorCritic(torch.nn.Module):
         """
         x_actor = self.tanh(self.fc1_actor(x))
         x_actor = self.tanh(self.fc2_actor(x_actor))
-        x_actor = self.tanh(self.fc3_actor(x_actor))
+        #x_actor = self.tanh(self.fc3_actor(x_actor))
         action_mean = self.fc4_actor_mean(x_actor)
 
         sigma = self.sigma_activation(self.sigma)
@@ -67,7 +67,7 @@ class ActorCritic(torch.nn.Module):
         return normal_dist,value
 
 class Agent(object):
-    def __init__(self, actorcritic, device='cpu', lr=1e-3, gamma=0.99, ewc_lambda=0.6):
+    def __init__(self, actorcritic, device='cpu', lr=1e-3, gamma=0.99, ewc_lambda=0.4):
         self.train_device = device
         self.actorcritic = actorcritic.to(self.train_device)
         self.optimizer = torch.optim.Adam(actorcritic.parameters(), lr=lr)
@@ -123,13 +123,16 @@ class Agent(object):
             advantages = returns - state_values
 
         actor_loss = -torch.mean(action_log_probs * advantages.detach())
-        critic_loss = F.mse_loss(advantages.detach(), state_values)
+        critic_loss = F.mse_loss(advantages, state_values)
         loss = actor_loss + critic_loss + self.ewc_loss()
 
         self.optimizer.zero_grad()
         loss.backward()
-        torch.nn.utils.clip_grad_norm_(self.actorcritic.parameters(), 0.5, 0.5)
+        #torch.nn.utils.clip_grad_norm_(self.actorcritic.parameters(), 1)
         self.optimizer.step()
+
+        # Update prev_params after the optimizer step
+        self.prev_params = {name: param.clone() for name, param in self.actorcritic.named_parameters()}
 
         return
 

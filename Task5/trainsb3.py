@@ -29,6 +29,7 @@ def parse_args():
     parser.add_argument('--episodes', default=100_000, type=int)
     parser.add_argument('--evalepisodes',default=250,type=int)
     parser.add_argument('--fine_tuning_parameters',default='Task5/result_SAC.pkl',type=str,help='Hyperparameters file path')
+    parser.add_argument('--seed',default=0,type=int,help='Seed')
     return parser.parse_args()
 
 args = parse_args()
@@ -55,7 +56,7 @@ def main():
         source_env = TrackRewardWrapper(source_env)
         #source_env=Monitor(source_env,args.source_log_path,allow_early_resets=True)
         train_env = source_env # sets the train to source
-        source_eval_callback = EvalCallback(eval_env=source_env, n_eval_episodes=50, eval_freq=1000) # Create callback that also evaluates agent for 50 episodes every 15000 source environment steps.
+        source_eval_callback = EvalCallback(eval_env=source_env, n_eval_episodes=50, eval_freq=10000) # Create callback that also evaluates agent for 50 episodes every 15000 source environment steps.
         callback_list.append(source_eval_callback)
     else:
         target_env=TrackRewardWrapper(target_env)
@@ -68,8 +69,8 @@ def main():
     with open(args.fine_tuning_parameters, 'rb') as infile:
         fine_tuning_params = pickle.load(infile)[1]  # [1] because you only need the config, not the score
 
-    model = SAC('MlpPolicy', batch_size=fine_tuning_params['batch_size'], learning_rate=fine_tuning_params['learning_rate'], env=train_env, verbose=1, device='cpu',seed=315304)
-    model.learn(total_timesteps=int(2.5e5), callback=callback, tb_log_name=args.train)
+    model = SAC('MlpPolicy', batch_size=fine_tuning_params['batch_size'], learning_rate=fine_tuning_params['learning_rate'], env=train_env, verbose=1, device='cpu',seed=args.seed)
+    model.learn(total_timesteps=int(3e5), callback=callback, tb_log_name=args.train)
     model.save("SAC_model_"+args.train)
 
     # Plot the results
@@ -89,6 +90,10 @@ def main():
 
     if args.train == 'source':
         save_rewards('SAC.txt','SAC_'+args.train, train_env.succ_metric_buffer)
+        save_rewards('SAC.txt','SAC_rewards'+args.train, train_env.buffer)
+    else:
+        save_rewards('SAC_target.txt','SAC_'+args.train, train_env.succ_metric_buffer)
+        save_rewards('SAC_target.txt','SAC_rewards'+args.train, train_env.buffer)
     
     save_rewards('SAC_test_noUDR.txt','SAC_'+args.train+'_'+args.test,test_env.succ_metric_buffer)
 

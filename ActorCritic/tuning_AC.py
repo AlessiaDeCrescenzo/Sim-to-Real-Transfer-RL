@@ -9,9 +9,9 @@ import random
 
 # Define the parameters for hyperparameter tuning
 params = {
-    'lr': [1e-4, 1e-5],
+    'lr': [1e-3, 1e-4],
     'gamma': [0.99,0.999],
-    'hidden': [32,64]              
+    'hidden': [64,128]              
 }
 
 MULTIPLE_STARTS = 4  # Number of runs for each parameter combination to average out randomness
@@ -21,7 +21,7 @@ def pool_tt(args):
     agent = train(**args) # Train the agent with the given parameters
     return test(agent) # Test the trained agent and return the test score
 
-seed_env=3153
+seed_env=315304
 
 results = []  # List to store the results of all parameter combinations
 set_seed(seed_env)

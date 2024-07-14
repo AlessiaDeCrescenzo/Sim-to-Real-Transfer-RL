@@ -47,11 +47,6 @@ class CustomHopper(MujocoEnv, utils.EzPickle):
             return new_masses
         return self.sim.model.body_mass[1:] 
 
-        #raise NotImplementedError()
-
-        #return
-
-
     def get_parameters(self):
         """Get value of mass for each link"""
         masses = np.array( self.sim.model.body_mass[1:] )
