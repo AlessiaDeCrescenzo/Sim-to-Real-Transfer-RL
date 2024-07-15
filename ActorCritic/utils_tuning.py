@@ -1,7 +1,7 @@
 import torch
 import gym
 from env.custom_hopper import *
-from agent2 import Agent, ActorCritic
+from agent import Agent, ActorCritic
 from env.Wrapper import TrackRewardWrapper
 import random
 
@@ -19,7 +19,7 @@ def save_rewards(filename, algo_name, rewards):
         file.write("\n")  # Add a newline for readability
 
 # Define the training function
-def train(train_env='CustomHopper-source-v0', device='cpu', episodes=5000, lr=1e-3, gamma=0.99, hidden=64):
+def train(train_env='CustomHopper-source-v0', device='cpu', episodes=10000, lr=1e-3, gamma=0.99, hidden=64):
     # Create the environment using the specified environment name
     seed1=np.random.randint(1)
 

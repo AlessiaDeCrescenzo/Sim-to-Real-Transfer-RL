@@ -5,13 +5,12 @@ import torch
 import gym
 
 from env.custom_hopper import *
-from agent import Agent, Actor, Critic
+from agent import Agent, ActorCritic
 from env.Wrapper import TrackRewardWrapper
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--actormodel', default='ActorCritic/actor_model.mdl', type=str, help='Model path')
-    parser.add_argument('--criticmodel', default='ActorCritic/critic_model.mdl', type=str, help='Model path')
+    parser.add_argument('--actorcriticmodel', default='ActorCritic/actor_model.mdl', type=str, help='Model path')
     parser.add_argument('--device', default='cpu', type=str, help='network device [cpu, cuda]')
     parser.add_argument('--render', default=True, action='store_true', help='Render the simulator')
     parser.add_argument('--episodes', default=10, type=int, help='Number of test episodes')
@@ -39,11 +38,9 @@ def main():
 	observation_space_dim = env.observation_space.shape[-1]
 	action_space_dim = env.action_space.shape[-1]
 
-	actor = Actor(observation_space_dim, action_space_dim)
-	actor.load_state_dict(torch.load(args.actormodel), strict=True)
+	actorcritic = ActorCritic(observation_space_dim, action_space_dim)
+	actor.load_state_dict(torch.load(args.actorcriticmodel), strict=True)
 
-	critic = Critic(observation_space_dim, action_space_dim)
-	critic.load_state_dict(torch.load(args.criticmodel), strict=True)
 
 	agent = Agent(actor,critic, device=args.device)
 

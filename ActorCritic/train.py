@@ -8,7 +8,7 @@ import gym
 import matplotlib.pyplot as plt
 
 from env.custom_hopper import *
-from agent2 import Agent, ActorCritic
+from agent import Agent, ActorCritic
 import pickle
 import numpy as np
 from env.Wrapper import TrackRewardWrapper
@@ -17,8 +17,8 @@ from utils_tuning import set_seed,save_rewards
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--n-episodes', default=35000, type=int, help='Number of training episodes')
-    parser.add_argument('--print-every', default=500, type=int, help='Print info every <> episodes')
+    parser.add_argument('--n-episodes', default=30000, type=int, help='Number of training episodes')
+    parser.add_argument('--print-every', default=200, type=int, help='Print info every <> episodes')
     parser.add_argument('--device', default='cpu', type=str, help='network device [cpu, cuda]')
     parser.add_argument('--fine-tuning-params', default='ActorCritic/result_AC.pkl', type=str, help='Path to fine-tuning parameters')
     return parser.parse_args()
@@ -27,14 +27,13 @@ args = parse_args()
 
 
 def main():
-	seed=3153
+	seed=315304
 	set_seed(seed)
 	
 	env = gym.make('CustomHopper-source-v0')
 	env=TrackRewardWrapper(env)
 	
 	env.seed(seed)
-	# env = gym.make('CustomHopper-target-v0')
 
 	print('Action space:', env.action_space)
 	print('State space:', env.observation_space)
@@ -82,26 +81,28 @@ def main():
 			train_reward += reward
 
 		returns.append(train_reward)
-		mean_rewards = np.mean(returns[-1000:])     #-100
+		mean_rewards = np.mean(returns[-500:])     #-100
 		avg_returns.append(mean_rewards)# Calculate average return
 		agent.update_policy()	
 		
 		if (episode+1)%args.print_every == 0:
 			print('Training episode:', episode)
 			print('Episode return:', train_reward)
-			print(f'Mean return (last 1000 episodes): {mean_rewards}')
+			print(f'Mean return (last 500 episodes): {mean_rewards}')
 
-	torch.save(agent.actorcritic.state_dict(), "ActorCritic/actor_model.mdl")
+	torch.save(agent.actorcritic.state_dict(), "ActorCritic/actorcritic2_model.mdl")
 
 	plt.plot(returns)
-	plt.plot(avg_returns, label='Average Return (last 1000 episodes)', linestyle='--') 
+	plt.plot(avg_returns, label='Average Return (last 500 episodes)', linestyle='--') 
 	plt.xlabel('Episode')
 	plt.ylabel('Return')
 	plt.title('Episode returns over time')
 	plt.legend()
 	plt.show()
 
-	save_rewards('Basic_AC.txt',"Actor Critic", avg_returns)
+	
+	save_rewards('AC2.txt',"Rewards", returns)
+	save_rewards('AC2.txt',"Mean Rewards", avg_returns)
 	
 
 if __name__ == '__main__':

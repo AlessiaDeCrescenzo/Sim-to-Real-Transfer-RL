@@ -33,11 +33,11 @@ class ActorCritic(torch.nn.Module):
         
         # Learned standard deviation for exploration at training time 
         self.sigma_activation = F.softplus
-        init_sigma = 0.9
+        init_sigma = 0.6
         self.sigma = torch.nn.Parameter(torch.zeros(self.action_space)+init_sigma)
 
         self.fc1_critic = torch.nn.Linear(state_space, self.hidden)
-        #self.fc2_critic = torch.nn.Linear(self.hidden, self.hidden)
+        self.fc2_critic = torch.nn.Linear(self.hidden, self.hidden)
         self.fc4_critic = torch.nn.Linear(self.hidden, 1)
 
         self.init_weights()
@@ -54,15 +54,13 @@ class ActorCritic(torch.nn.Module):
         """
         x_actor = self.tanh(self.fc1_actor(x))
         x_actor = self.tanh(self.fc2_actor(x_actor))
-        x_actor = self.tanh(self.fc3_actor(x_actor))
+        #x_actor = self.tanh(self.fc3_actor(x_actor))
         action_mean = self.fc3_actor_mean(x_actor)
 
         sigma = self.sigma_activation(self.sigma)
         normal_dist = Normal(action_mean, sigma)
 
         x_critic = self.tanh(self.fc1_critic(x))
-        #x_critic = self.tanh(self.fc2_critic(x_critic))
-        #x_critic = self.tanh(self.fc3_critic(x_critic))
         value = self.fc4_critic(x_critic)
 
         return normal_dist,value
@@ -100,21 +98,21 @@ class Agent(object):
         
         # TASK 3:
         #   compute boostrapped discounted return estimates
-        returns = bootstrapped_rewards(rewards,next_state_values,self.gamma)
+        returns = discount_rewards(rewards,self.gamma)
+        returns = bootstrapped_rewards(returns,next_state_values,self.gamma)
         #   compute advantage terms
         advantages = returns - state_values
         #   compute actor loss and critic loss
 
-        actor_loss = -torch.mean(action_log_probs * advantages.detach())
+        actor_loss = -torch.sum(action_log_probs * advantages.detach())
         critic_loss = F.mse_loss(advantages, state_values)
-        #loss=actor_loss+critic_loss
+        loss=actor_loss+critic_loss
         
         #   - compute gradients and step the optimizer
         # Perform optimization step
         self.optimizer.zero_grad()
-        actor_loss.backward(retain_graph=True)
-        critic_loss.backward()
-        #torch.nn.utils.clip_grad_norm_(self.actorcritic.parameters(), 1)
+        #actor_loss.backward(retain_graph=True)
+        loss.backward()
         self.optimizer.step()
 
 
