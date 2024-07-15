@@ -23,4 +23,4 @@ test_env=TrackRewardWrapper(test_env)
 mean_reward, std_reward = evaluate_policy(model, test_env, n_eval_episodes=250, render=False)
 print(mean_reward,std_reward)
 
-save_rewards('SAC_test_noUDR.txt','SAC_source_target',test_env.succ_metric_buffer)
+save_rewards('SAC_test_UDR.txt','SAC_source_target',test_env.succ_metric_buffer)

@@ -29,7 +29,7 @@ def parse_args():
 	parser.add_argument('--env-train', default='CustomHopperUDR-source-v0', type=str, help='Train environment')
 	parser.add_argument('--env-test', default='CustomHopperUDR-source-v0', type=str, help='Test environment')
 	parser.add_argument('--device', default='cpu', type=str, help='Device [cpu, cuda]')
-	parser.add_argument('--train-steps', default=5e4, type=int, help='Train timesteps for a single policy')
+	parser.add_argument('--train-steps', default=2.5e4, type=int, help='Train timesteps for a single policy')
 	parser.add_argument('--verbose', default='False', type=bool, help='Print hyperparameters and mean return at each iteration')
 	return parser.parse_args()
 
@@ -126,9 +126,9 @@ def main():
 	}
 
 	space = {
-		'thigh_hw': [0.5, 1],
-        'leg_hw': [0.5, 1],
-        'foot_hw':[0.5, 1]
+		'thigh_hw': [1,1.5],
+        'leg_hw': [1,1.5],
+        'foot_hw':[1,1.5]
 	}
 
 	keys = list(space.keys())

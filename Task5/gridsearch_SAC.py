@@ -35,9 +35,6 @@ for p in tqdm(itertools.product(*params.values())):
 	score = sum(scores)/len(scores)
 	results.append([score, kw])
 
-    # alternative log
-	# np.savez(f'outputs/log_{counter}', results=results)
-
 # Sort and get the best fine-tuning result
 results.sort(reverse=True, key=lambda x: x[0])
 best_result = results[0]

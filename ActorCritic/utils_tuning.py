@@ -71,7 +71,7 @@ def train(train_env='CustomHopper-source-v0', device='cpu', episodes=10000, lr=1
     return agent
 
 # Define the testing function
-def test(agent, episodes=100, test_env='CustomHopper-source-v0'):
+def test(agent, episodes=250, test_env='CustomHopper-source-v0'):
     # Create the environment for testing
     seed1=np.random.randint(1)
 

@@ -17,7 +17,7 @@ from utils_sac import save_rewards
 
 model = SAC.load("SAC_model_UDRsource")
 
-test_env= gym.make('CustomHopper-target-v0')
+test_env= gym.make('CustomHopperUDR-target-v0')
 test_env=TrackRewardWrapper(test_env)
 
 mean_reward, std_reward = evaluate_policy(model, test_env, n_eval_episodes=250, render=False)

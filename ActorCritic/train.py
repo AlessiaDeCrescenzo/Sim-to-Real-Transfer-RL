@@ -17,7 +17,7 @@ from utils_tuning import set_seed,save_rewards
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--n-episodes', default=30000, type=int, help='Number of training episodes')
+    parser.add_argument('--n-episodes', default=100000, type=int, help='Number of training episodes')
     parser.add_argument('--print-every', default=200, type=int, help='Print info every <> episodes')
     parser.add_argument('--device', default='cpu', type=str, help='network device [cpu, cuda]')
     parser.add_argument('--fine-tuning-params', default='ActorCritic/result_AC.pkl', type=str, help='Path to fine-tuning parameters')
@@ -90,7 +90,7 @@ def main():
 			print('Episode return:', train_reward)
 			print(f'Mean return (last 500 episodes): {mean_rewards}')
 
-	torch.save(agent.actorcritic.state_dict(), "ActorCritic/actorcritic2_model.mdl")
+	torch.save(agent.actorcritic.state_dict(), "ActorCritic/actorcritic_model.mdl")
 
 	plt.plot(returns)
 	plt.plot(avg_returns, label='Average Return (last 500 episodes)', linestyle='--') 
@@ -101,8 +101,8 @@ def main():
 	plt.show()
 
 	
-	save_rewards('AC2.txt',"Rewards", returns)
-	save_rewards('AC2.txt',"Mean Rewards", avg_returns)
+	save_rewards('Basic_AC.txt',"Rewards", returns)
+	save_rewards('Basic_AC.txt',"Mean Rewards", avg_returns)
 	
 
 if __name__ == '__main__':
