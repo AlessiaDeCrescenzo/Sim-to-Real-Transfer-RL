@@ -37,8 +37,8 @@ def plot_rewards(file_path):
         plt.plot(rewards, label=algo_names[i])
     
     plt.xlabel('Episode')
-    plt.ylabel('Reward')
-    plt.title('Training results')
+    plt.ylabel('Mean Reward')
+    plt.title('Moving average of test results')
     plt.legend()
     plt.show()
 
@@ -71,6 +71,6 @@ def plot_results(file1, algo_name1, file2, algo_name2):
     plt.show()
 
 
-plot_results('SAC_UDR.txt', 'SAC_rewardssource','SAC_UDR.txt', 'SAC_source')
+#plot_results('SAC_UDR.txt', 'SAC_rewardssource','SAC_UDR.txt', 'SAC_source')
 
-#plot_rewards('SAC_test_UDR.txt')
+plot_rewards('SAC_test_UDR.txt')
